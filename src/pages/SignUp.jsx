@@ -10,6 +10,7 @@ import { db } from "../firebase.config";
 import { toast } from "react-toastify";
 import { ReactComponent as ArrowRightIcon } from "../assets/svg/keyboardArrowRightIcon.svg";
 import visibilityIcon from "../assets/svg/visibilityIcon.svg";
+import OAuth from "../components/OAuth";
 
 function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +72,7 @@ function SignUp() {
                     />
                     <input
                         type="email"
+                        autoComplete="email"
                         className="emailInput"
                         placeholder="Email"
                         id="email"
@@ -80,23 +82,26 @@ function SignUp() {
                     <div className="passwordInputDiv">
                         <input
                             type={showPassword ? "text" : "password"}
+                            autoComplete="new-password"
                             className="passwordInput"
                             placeholder="Password"
                             id="password"
                             value={password}
                             onChange={onChange}
                         />
-                        <img
-                            src={visibilityIcon}
-                            alt="show pass"
-                            className="showPassword"
-                            onClick={() =>
-                                setShowPassword((prevState) => !prevState)
-                            }
-                        />
+                        {formData.password && (
+                            <img
+                                src={visibilityIcon}
+                                alt="show pass"
+                                className="showPassword"
+                                onClick={() =>
+                                    setShowPassword((prevState) => !prevState)
+                                }
+                            />
+                        )}
                     </div>
-                    <Link to="/forgot-password" className="forgotPasswordLink">
-                        Forgot Password
+                    <Link to="/sign-in" className="registerLink">
+                        Sign In Instead
                     </Link>
                     <div className="signUpBar">
                         <p className="signUpText">Sign Up</p>
@@ -109,9 +114,7 @@ function SignUp() {
                         </button>
                     </div>
                 </form>
-                <Link to="/sign-in" className="registerLink">
-                    Sign In Instead
-                </Link>
+                <OAuth />
             </div>
         </>
     );

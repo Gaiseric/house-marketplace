@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
     collection,
     getDocs,
@@ -12,10 +13,12 @@ import { toast } from "react-toastify";
 import Spinner from "../components/Spinner";
 import ListingItem from "../components/ListingItem";
 
-function Offers() {
+function Category() {
     const [listings, setListings] = useState(null);
 
     const [loading, setLoading] = useState(true);
+
+    const params = useParams();
 
     useEffect(() => {
         const fetchListings = async () => {
@@ -23,7 +26,7 @@ function Offers() {
                 const listingRef = collection(db, "listings");
                 const q = query(
                     listingRef,
-                    where("offer", "==", true),
+                    where("type", "==", params.categoryName),
                     orderBy("timestamp", "desc"),
                     limit(10)
                 );
@@ -38,17 +41,20 @@ function Offers() {
                 setListings(listings);
                 setLoading(false);
             } catch (error) {
-                console.log(error);
                 toast.error("Couldn't receive listings");
             }
         };
         fetchListings();
-    }, []);
+    }, [params.categoryName]);
 
     return (
         <div className="category">
             <header>
-                <p className="pageHeader">Offers</p>
+                <p className="pageHeader">
+                    {params.categoryName === "rent"
+                        ? "Places for rent"
+                        : "Places for sale"}
+                </p>
             </header>
             {loading ? (
                 <Spinner />
@@ -61,10 +67,10 @@ function Offers() {
                     </ul>
                 </main>
             ) : (
-                <p>No listings for offers</p>
+                <p>No listings for {params.categoryName}</p>
             )}
         </div>
     );
 }
 
-export default Offers;
+export default Category;
