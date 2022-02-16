@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { PropTypes } from "prop-types";
 import { ReactComponent as DeleteIcon } from "../assets/svg/deleteIcon.svg";
 import bedIcon from "../assets/svg/bedIcon.svg";
 import bathtubIcon from "../assets/svg/bathtubIcon.svg";
@@ -53,5 +54,14 @@ function ListingItem({ listing: { id, data: listing }, onDelete }) {
         </li>
     );
 }
+
+ListingItem.defaultProps = {
+    onDelete: null,
+};
+
+ListingItem.propTypes = {
+    listing: PropTypes.object.isRequired,
+    onDelete: PropTypes.func,
+};
 
 export default ListingItem;

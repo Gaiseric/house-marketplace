@@ -726,6 +726,21 @@ button {
     padding: 0;
 }
 
+@media (min-width: 1025px) {
+    .listingForm {
+        background-color: #d9dadb59;
+        border-radius: 1rem;
+        padding: 2rem;
+        width: 60vw;
+    }
+}
+
+@media (min-width: 1920px) {
+    .listingForm {
+        width: 40vw;
+    }
+}
+
 .formLabel {
     font-weight: 600;
     margin-top: 1rem;
@@ -760,6 +775,12 @@ button {
 
 .flex {
     display: flex;
+}
+
+.formLatLng,
+.formRooms {
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .formInput,
@@ -808,6 +829,7 @@ button {
 .formInputFile {
     width: 100%;
 }
+
 .formInputFile::-webkit-file-upload-button {
     background-color: #00cc66;
     border: none;
