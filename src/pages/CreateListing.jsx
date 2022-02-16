@@ -1,9 +1,17 @@
 import { useState, useEffect } from "react";
-import { getAuth } from "firebase/auth";
+import {
+    getStorage,
+    ref,
+    uploadBytesResumable,
+    getDownloadURL,
+} from "firebase/storage";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase.config";
 import { useNavigate } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
+import { v4 as uuidv4 } from "uuid";
 
 function CreateListing() {
     const [geolocationEnabled, setGeolocationEnabled] = useState(false);
@@ -45,6 +53,7 @@ function CreateListing() {
     const onSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+
         if (formData.discountedPrice >= formData.regularPrice) {
             setLoading(false);
             toast.error("Discounted price needs to be less than regular price");
@@ -55,8 +64,13 @@ function CreateListing() {
             toast.error("Max 6 images allowed");
             return;
         }
-        let geolocation = {};
+
+        let geolocation = {
+            lat: 0,
+            lng: 0,
+        };
         let location;
+
         if (geolocationEnabled) {
             try {
                 const response = await fetch(
@@ -82,9 +96,73 @@ function CreateListing() {
         } else {
             geolocation.lat = formData.latitude;
             geolocation.lng = formData.longitude;
-            location = formData.address;
         }
+
+        const storeImage = async (image) => {
+            return new Promise((resolve, reject) => {
+                const storage = getStorage();
+                const fileName = `${loggedUser.uid}-${image.name}-${uuidv4()}`;
+                const storageRef = ref(storage, "images/" + fileName);
+                const uploadTask = uploadBytesResumable(storageRef, image);
+                uploadTask.on(
+                    "state_changed",
+                    (snapshot) => {
+                        const progress =
+                            (snapshot.bytesTransferred / snapshot.totalBytes) *
+                            100;
+                        console.log("Upload is " + progress + "% done");
+                        switch (snapshot.state) {
+                            case "paused":
+                                console.log("Upload is paused");
+                                break;
+                            case "running":
+                                console.log("Upload is running");
+                                break;
+                            default:
+                                break;
+                        }
+                    },
+                    (error) => {
+                        reject(error);
+                    },
+                    () => {
+                        getDownloadURL(uploadTask.snapshot.ref).then(
+                            (downloadURL) => {
+                                resolve(downloadURL);
+                            }
+                        );
+                    }
+                );
+            });
+        };
+
+        const imgUrls = await Promise.all(
+            [...formData.images].map((image) => storeImage(image))
+        ).catch(() => {
+            setLoading(false);
+            toast.error("Problems with images uploading");
+        });
+
+        const formDataToDb = {
+            ...formData,
+            geolocation,
+            imgUrls,
+            timestamp: serverTimestamp(),
+        };
+
+        formDataToDb.location = formData.address;
+        delete formDataToDb.images;
+        delete formDataToDb.address;
+        delete formDataToDb.latitude;
+        delete formDataToDb.longitude;
+        !formDataToDb.offer && delete formDataToDb.discountedPrice;
+
+        console.log(formDataToDb);
+
+        const docRef = await addDoc(collection(db, "listings"), formDataToDb);
         setLoading(false);
+        toast.success("Listing saved");
+        navigate(`/category/${formDataToDb.type}/${docRef.id}`);
     };
 
     const onMutate = (e) => {
@@ -100,9 +178,14 @@ function CreateListing() {
                 images: e.target.files,
             }));
         } else {
+            console.log(boolean);
             setFormData((prevState) => ({
                 ...prevState,
-                [e.target.id]: boolean ?? e.target.value,
+                [e.target.id]:
+                    boolean ??
+                    (e.target.type === "number"
+                        ? Number(e.target.value)
+                        : e.target.value),
             }));
         }
     };
