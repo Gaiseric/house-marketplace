@@ -1,17 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-    getStorage,
-    ref,
-    uploadBytesResumable,
-    getDownloadURL,
-} from "firebase/storage";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase.config";
 import { useNavigate } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
-import { v4 as uuidv4 } from "uuid";
+import useListingCreation from "../hooks/useListingCreation";
 
 function CreateListing() {
     const [geolocationEnabled, setGeolocationEnabled] = useState(false);
@@ -19,6 +11,9 @@ function CreateListing() {
     const [loading, setLoading] = useState(false);
 
     const { loggedUser, checkingStatus } = useAuthStatus();
+
+    const { receiveGeoCoords, saveImagesToStorage, saveFormDataToDb } =
+        useListingCreation();
 
     const [formData, setFormData] = useState({
         type: "rent",
@@ -65,25 +60,17 @@ function CreateListing() {
             return;
         }
 
-        let geolocation = {
-            lat: 0,
-            lng: 0,
-        };
-        let location;
-
+        let geolocation = {};
         if (geolocationEnabled) {
             try {
-                const response = await fetch(
-                    `https://maps.googleapis.com/maps/api/geocode/json?address=${formData.address}&key=${process.env.REACT_APP_GEOCODE_API_KEY}`
+                let formattedAddress = await receiveGeoCoords(
+                    formData.address,
+                    geolocation
                 );
-                const data = await response.json();
-                geolocation.lat = data.resuts[0]?.geometry.location.lat ?? 0;
-                geolocation.lng = data.resuts[0]?.geometry.location.lng ?? 0;
-                location =
-                    data.status === "ZERO_RESULTS"
-                        ? undefined
-                        : data.results[0]?.formatted_address;
-                if (location === undefined || location.includes("undefined")) {
+                if (
+                    formattedAddress === undefined ||
+                    formattedAddress.includes("undefined")
+                ) {
                     setLoading(false);
                     toast.error("Please enter a correct address");
                     return;
@@ -98,71 +85,30 @@ function CreateListing() {
             geolocation.lng = formData.longitude;
         }
 
-        const storeImage = async (image) => {
-            return new Promise((resolve, reject) => {
-                const storage = getStorage();
-                const fileName = `${loggedUser.uid}-${image.name}-${uuidv4()}`;
-                const storageRef = ref(storage, "images/" + fileName);
-                const uploadTask = uploadBytesResumable(storageRef, image);
-                uploadTask.on(
-                    "state_changed",
-                    (snapshot) => {
-                        const progress =
-                            (snapshot.bytesTransferred / snapshot.totalBytes) *
-                            100;
-                        console.log("Upload is " + progress + "% done");
-                        switch (snapshot.state) {
-                            case "paused":
-                                console.log("Upload is paused");
-                                break;
-                            case "running":
-                                console.log("Upload is running");
-                                break;
-                            default:
-                                break;
-                        }
-                    },
-                    (error) => {
-                        reject(error);
-                    },
-                    () => {
-                        getDownloadURL(uploadTask.snapshot.ref).then(
-                            (downloadURL) => {
-                                resolve(downloadURL);
-                            }
-                        );
-                    }
-                );
-            });
-        };
-
-        const imgUrls = await Promise.all(
-            [...formData.images].map((image) => storeImage(image))
-        ).catch(() => {
+        let imgUrls;
+        try {
+            imgUrls = await saveImagesToStorage(
+                loggedUser.uid,
+                formData.images
+            );
+        } catch {
             setLoading(false);
             toast.error("Problems with images uploading");
-        });
+        }
 
-        const formDataToDb = {
-            ...formData,
-            geolocation,
-            imgUrls,
-            timestamp: serverTimestamp(),
-        };
-
-        formDataToDb.location = formData.address;
-        delete formDataToDb.images;
-        delete formDataToDb.address;
-        delete formDataToDb.latitude;
-        delete formDataToDb.longitude;
-        !formDataToDb.offer && delete formDataToDb.discountedPrice;
-
-        console.log(formDataToDb);
-
-        const docRef = await addDoc(collection(db, "listings"), formDataToDb);
-        setLoading(false);
-        toast.success("Listing saved");
-        navigate(`/category/${formDataToDb.type}/${docRef.id}`);
+        try {
+            const docRef = await saveFormDataToDb(
+                formData,
+                geolocation,
+                imgUrls
+            );
+            setLoading(false);
+            toast.success("Listing saved to database");
+            navigate(`/category/${formData.type}/${docRef.id}`);
+        } catch {
+            setLoading(false);
+            toast.error("Problems with storing to database");
+        }
     };
 
     const onMutate = (e) => {
@@ -178,7 +124,6 @@ function CreateListing() {
                 images: e.target.files,
             }));
         } else {
-            console.log(boolean);
             setFormData((prevState) => ({
                 ...prevState,
                 [e.target.id]:
