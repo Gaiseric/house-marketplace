@@ -47,6 +47,10 @@ function Category() {
         fetchListings();
     }, [params.categoryName]);
 
+    if (loading) {
+        return <Spinner />;
+    }
+
     return (
         <div className="category">
             <header>
@@ -56,9 +60,7 @@ function Category() {
                         : "Places for sale"}
                 </p>
             </header>
-            {loading ? (
-                <Spinner />
-            ) : listings && listings.length > 0 ? (
+            {listings && listings.length > 0 ? (
                 <main>
                     <ul className="categoryListings">
                         {listings.map((listing) => (

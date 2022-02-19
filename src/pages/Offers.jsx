@@ -37,22 +37,23 @@ function Offers() {
                 });
                 setListings(listings);
                 setLoading(false);
-            } catch (error) {
-                console.log(error);
+            } catch {
                 toast.error("Couldn't receive listings");
             }
         };
         fetchListings();
     }, []);
 
+    if (loading) {
+        return <Spinner />;
+    }
+
     return (
         <div className="category">
             <header>
                 <p className="pageHeader">Offers</p>
             </header>
-            {loading ? (
-                <Spinner />
-            ) : listings && listings.length > 0 ? (
+            {listings && listings.length > 0 ? (
                 <main>
                     <ul className="categoryListings">
                         {listings.map((listing) => (
