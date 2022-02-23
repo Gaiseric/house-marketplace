@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
 import useListingDbOperations from "../hooks/useListingDbOperations";
 
-function CreateListing() {
+function EditListing() {
     const [loading, setLoading] = useState(false);
+
+    const [listing, setListing] = useState(null);
 
     const { loggedUser, checkingStatus } = useAuthStatus();
 
-    const { saveImagesToStorage, saveListingToDb } = useListingDbOperations();
+    const { saveImagesToStorage, updateListingInDb, fetchListingFromDb } =
+        useListingDbOperations();
 
     const [formData, setFormData] = useState({
         type: "rent",
@@ -30,6 +33,8 @@ function CreateListing() {
 
     const navigate = useNavigate();
 
+    const params = useParams();
+
     useEffect(() => {
         if (!checkingStatus) {
             if (loggedUser) {
@@ -41,6 +46,34 @@ function CreateListing() {
             }
         }
     }, [checkingStatus, loggedUser, navigate]);
+
+    useEffect(() => {
+        setLoading(true);
+        fetchListingFromDb(params.listingId)
+            .then((docSnap) => {
+                if (docSnap) {
+                    setListing(docSnap);
+                    setFormData({
+                        ...docSnap,
+                        address: docSnap.location,
+                        latitude: docSnap.geolocation.lat,
+                        longitude: docSnap.geolocation.lng,
+                    });
+                    setLoading(false);
+                }
+            })
+            .catch(() => {
+                navigate(-1);
+                toast.error("Can not receive listing");
+            });
+    }, [fetchListingFromDb, navigate, params.listingId]);
+
+    useEffect(() => {
+        if (listing && listing.userRef !== loggedUser.uid) {
+            navigate("/");
+            toast.error("You can not edit that listing");
+        }
+    }, [listing, loggedUser, navigate]);
 
     const onSubmit = async (e) => {
         e.preventDefault();
@@ -73,17 +106,18 @@ function CreateListing() {
             lng: formData.longitude,
         };
         try {
-            const docRef = await saveListingToDb(
+            const docRef = await updateListingInDb(
                 formData,
                 geolocation,
-                imgUrls
+                imgUrls,
+                params.listingId
             );
             setLoading(false);
-            toast.success("Listing saved to database");
+            toast.success("Listing updated in database");
             navigate(`/category/${formData.type}/${docRef.id}`);
         } catch {
             setLoading(false);
-            toast.error("Problems with storing to database");
+            toast.error("Problems with listing updating");
         }
     };
 
@@ -121,7 +155,7 @@ function CreateListing() {
     return (
         <div className="profile">
             <header>
-                <p className="pageHeader">Create a Listing</p>
+                <p className="pageHeader">Edit Listing</p>
             </header>
             <main>
                 <form className="listingForm" onSubmit={onSubmit}>
@@ -261,7 +295,6 @@ function CreateListing() {
                         onChange={onMutate}
                         required
                     />
-
                     <div className="formLatLng">
                         <div>
                             <label className="formLabel">Latitude</label>
@@ -366,7 +399,7 @@ function CreateListing() {
                         type="submit"
                         className="primaryButton createListingButton"
                     >
-                        Create Listing
+                        Edit Listing
                     </button>
                 </form>
             </main>
@@ -374,4 +407,4 @@ function CreateListing() {
     );
 }
 
-export default CreateListing;
+export default EditListing;

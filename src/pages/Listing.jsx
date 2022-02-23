@@ -15,11 +15,15 @@ import "swiper/css/pagination";
 
 function Listing() {
     const [listing, setListing] = useState(null);
+
     const [loading, setLoading] = useState(true);
+
     const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
     const navigate = useNavigate();
+
     const params = useParams();
+
     const auth = getAuth();
 
     useEffect(() => {

@@ -11,6 +11,7 @@ import { db } from "../firebase.config";
 
 function Slider() {
     const [loading, setLoading] = useState(true);
+
     const [listings, setListings] = useState(null);
 
     const navigate = useNavigate();
@@ -44,41 +45,38 @@ function Slider() {
         return <Spinner />;
     }
 
-    return (
-        listings && (
-            <>
-                <p className="exploreHeading">Recommended</p>
-                <Swiper
-                    modules={[Navigation, Pagination]}
-                    slidesPerView={1}
-                    pagination={{ clickable: true }}
-                >
-                    {listings.map(({ data, id }) => (
-                        <SwiperSlide
-                            key={id}
-                            onClick={() =>
-                                navigate(`/category/${data.type}/${id}`)
-                            }
+    return listings ? (
+        <>
+            <p className="exploreHeading">Recommended</p>
+            <Swiper
+                modules={[Navigation, Pagination]}
+                slidesPerView={1}
+                pagination={{ clickable: true }}
+            >
+                {listings.map(({ data, id }) => (
+                    <SwiperSlide
+                        key={id}
+                        onClick={() => navigate(`/category/${data.type}/${id}`)}
+                    >
+                        <div
+                            className="swiperSlideDiv"
+                            style={{
+                                background: `url(${data.imgUrls[0]}) center/cover no-repeat`,
+                            }}
                         >
-                            <div
-                                className="swiperSlideDiv"
-                                style={{
-                                    background: `url(${data.imgUrls[0]}) center/cover no-repeat`,
-                                }}
-                            >
-                                <p className="swiperSlideText">{data.name}</p>
-                                <p className="swiperSlidePrice">
-                                    {"$"}
-                                    {data.discountedPrice ??
-                                        data.regularPrice}{" "}
-                                    {data.type === "rent" && "/ month"}
-                                </p>
-                            </div>
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
-            </>
-        )
+                            <p className="swiperSlideText">{data.name}</p>
+                            <p className="swiperSlidePrice">
+                                {"$"}
+                                {data.discountedPrice ?? data.regularPrice}{" "}
+                                {data.type === "rent" && "/ month"}
+                            </p>
+                        </div>
+                    </SwiperSlide>
+                ))}
+            </Swiper>
+        </>
+    ) : (
+        <></>
     );
 }
 

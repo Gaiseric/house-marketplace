@@ -75,14 +75,14 @@ button {
 .removeIcon {
     cursor: pointer;
     position: absolute;
-    top: -3%;
-    right: -2%;
+    bottom: 30px;
+    right: -40px;
 }
 .editIcon {
     cursor: pointer;
     position: absolute;
-    top: -3.4%;
-    right: 20px;
+    top: 30px;
+    right: -40px;
 }
 
 .pageContainer,
@@ -427,6 +427,10 @@ button {
 
 .categoryListings {
     padding: 0;
+}
+
+.listingsList {
+    padding: 0 40px 0 0;
 }
 
 .categoryListing {
