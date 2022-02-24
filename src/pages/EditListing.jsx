@@ -22,13 +22,15 @@ function EditListing() {
         bathrooms: 1,
         parking: false,
         furnished: false,
-        address: "",
+        location: "",
         offer: false,
         regularPrice: 0,
         discountedPrice: 0,
         images: {},
-        latitude: 0,
-        longitude: 0,
+        geolocation: {
+            lat: 0,
+            lng: 0,
+        },
     });
 
     const navigate = useNavigate();
@@ -55,9 +57,6 @@ function EditListing() {
                     setListing(docSnap);
                     setFormData({
                         ...docSnap,
-                        address: docSnap.location,
-                        latitude: docSnap.geolocation.lat,
-                        longitude: docSnap.geolocation.lng,
                     });
                     setLoading(false);
                 }
@@ -101,14 +100,9 @@ function EditListing() {
             toast.error("Problems with images uploading");
         }
 
-        let geolocation = {
-            lat: formData.latitude,
-            lng: formData.longitude,
-        };
         try {
             const docRef = await updateListingInDb(
                 formData,
-                geolocation,
                 imgUrls,
                 params.listingId
             );
@@ -132,6 +126,14 @@ function EditListing() {
             setFormData((prevState) => ({
                 ...prevState,
                 images: e.target.files,
+            }));
+        } else if (e.target.id === "lat" || e.target.id === "lng") {
+            setFormData((prevState) => ({
+                ...prevState,
+                geolocation: {
+                    ...prevState.geolocation,
+                    [e.target.id]: Number(e.target.value),
+                },
             }));
         } else {
             setFormData((prevState) => ({
@@ -289,9 +291,9 @@ function EditListing() {
                     <label className="formLabel">Address</label>
                     <textarea
                         className="formInputAddress"
-                        id="address"
+                        id="location"
                         type="text"
-                        value={formData.address}
+                        value={formData.location}
                         onChange={onMutate}
                         required
                     />
@@ -301,8 +303,8 @@ function EditListing() {
                             <input
                                 type="number"
                                 className="formInputSmall"
-                                id="latitude"
-                                value={formData.latitude}
+                                id="lat"
+                                value={formData.geolocation.lat}
                                 onChange={onMutate}
                                 required
                             />
@@ -312,8 +314,8 @@ function EditListing() {
                             <input
                                 type="number"
                                 className="formInputSmall"
-                                id="longitude"
-                                value={formData.longitude}
+                                id="lng"
+                                value={formData.geolocation.lng}
                                 onChange={onMutate}
                                 required
                             />

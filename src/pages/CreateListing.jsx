@@ -19,13 +19,15 @@ function CreateListing() {
         bathrooms: 1,
         parking: false,
         furnished: false,
-        address: "",
+        location: "",
         offer: false,
         regularPrice: 0,
         discountedPrice: 0,
         images: {},
-        latitude: 0,
-        longitude: 0,
+        geolocation: {
+            lat: 0,
+            lng: 0,
+        },
     });
 
     const navigate = useNavigate();
@@ -68,16 +70,8 @@ function CreateListing() {
             toast.error("Problems with images uploading");
         }
 
-        let geolocation = {
-            lat: formData.latitude,
-            lng: formData.longitude,
-        };
         try {
-            const docRef = await saveListingToDb(
-                formData,
-                geolocation,
-                imgUrls
-            );
+            const docRef = await saveListingToDb(formData, imgUrls);
             setLoading(false);
             toast.success("Listing saved to database");
             navigate(`/category/${formData.type}/${docRef.id}`);
@@ -98,6 +92,14 @@ function CreateListing() {
             setFormData((prevState) => ({
                 ...prevState,
                 images: e.target.files,
+            }));
+        } else if (e.target.id === "lat" || e.target.id === "lng") {
+            setFormData((prevState) => ({
+                ...prevState,
+                geolocation: {
+                    ...prevState.geolocation,
+                    [e.target.id]: Number(e.target.value),
+                },
             }));
         } else {
             setFormData((prevState) => ({
@@ -255,9 +257,9 @@ function CreateListing() {
                     <label className="formLabel">Address</label>
                     <textarea
                         className="formInputAddress"
-                        id="address"
+                        id="location"
                         type="text"
-                        value={formData.address}
+                        value={formData.location}
                         onChange={onMutate}
                         required
                     />
@@ -268,8 +270,8 @@ function CreateListing() {
                             <input
                                 type="number"
                                 className="formInputSmall"
-                                id="latitude"
-                                value={formData.latitude}
+                                id="lat"
+                                value={formData.geolocation.lat}
                                 onChange={onMutate}
                                 required
                             />
@@ -279,8 +281,8 @@ function CreateListing() {
                             <input
                                 type="number"
                                 className="formInputSmall"
-                                id="longitude"
-                                value={formData.longitude}
+                                id="lng"
+                                value={formData.geolocation.lng}
                                 onChange={onMutate}
                                 required
                             />

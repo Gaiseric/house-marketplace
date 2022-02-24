@@ -51,37 +51,27 @@ const saveImagesToStorage = (userUid, images) => {
     return Promise.all([...images].map((image) => storeImage(image)));
 };
 
-const saveListingToDb = (formData, geolocation, imgUrls) => {
+const saveListingToDb = (formData, imgUrls) => {
     const formDataToDb = {
         ...formData,
-        geolocation,
         imgUrls,
         timestamp: serverTimestamp(),
     };
 
-    formDataToDb.location = formData.address;
     delete formDataToDb.images;
-    delete formDataToDb.address;
-    delete formDataToDb.latitude;
-    delete formDataToDb.longitude;
     !formDataToDb.offer && delete formDataToDb.discountedPrice;
 
     return addDoc(collection(db, "listings"), formDataToDb);
 };
 
-const updateListingInDb = async (formData, geolocation, imgUrls, listingId) => {
+const updateListingInDb = async (formData, imgUrls, listingId) => {
     const formDataToDb = {
         ...formData,
-        geolocation,
         imgUrls,
         timestamp: serverTimestamp(),
     };
 
-    formDataToDb.location = formData.address;
     delete formDataToDb.images;
-    delete formDataToDb.address;
-    delete formDataToDb.latitude;
-    delete formDataToDb.longitude;
     !formDataToDb.offer && delete formDataToDb.discountedPrice;
 
     const docRef = doc(db, "listings", listingId);
