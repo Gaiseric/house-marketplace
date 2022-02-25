@@ -89,10 +89,10 @@ export default function useDbOperations() {
         }
     }, []);
 
-    const fetchListingFromDb = useCallback(async (listingId) => {
+    const fetchDocFromDb = useCallback(async (collection, docId) => {
         setLoading(true);
         try {
-            const docRef = doc(db, "listings", listingId);
+            const docRef = doc(db, collection, docId);
             const docSnap = await getDoc(docRef);
             setLoading(false);
             if (docSnap.exists()) {
@@ -102,7 +102,7 @@ export default function useDbOperations() {
             }
         } catch {
             setLoading(false);
-            return Promise.reject("Unable to fetch listing");
+            return Promise.reject("Unable to fetch data");
         }
     }, []);
 
@@ -110,7 +110,7 @@ export default function useDbOperations() {
         loading,
         saveListingToDb,
         updateListingInDb,
-        fetchListingFromDb,
+        fetchDocFromDb,
     };
 }
 

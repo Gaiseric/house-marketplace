@@ -7,12 +7,8 @@ import useDbOperations from "../hooks/useDbOperations";
 
 function EditListing() {
     const [listing, setListing] = useState(null);
-
     const { loggedUser, checkingStatus } = useAuthStatus();
-
-    const { loading, updateListingInDb, fetchListingFromDb } =
-        useDbOperations();
-
+    const { loading, updateListingInDb, fetchDocFromDb } = useDbOperations();
     const [formData, setFormData] = useState({
         type: "rent",
         name: "",
@@ -30,9 +26,7 @@ function EditListing() {
             lng: 0,
         },
     });
-
     const navigate = useNavigate();
-
     const params = useParams();
 
     useEffect(() => {
@@ -48,7 +42,7 @@ function EditListing() {
     }, [checkingStatus, loggedUser, navigate]);
 
     useEffect(() => {
-        fetchListingFromDb(params.listingId)
+        fetchDocFromDb("listings", params.listingId)
             .then((docSnap) => {
                 if (docSnap) {
                     setListing(docSnap);
@@ -62,7 +56,7 @@ function EditListing() {
                 navigate(-1);
                 toast.error(error);
             });
-    }, [fetchListingFromDb, navigate, params.listingId]);
+    }, [fetchDocFromDb, navigate, params.listingId]);
 
     useEffect(() => {
         if (listing && listing.userRef !== loggedUser.uid) {

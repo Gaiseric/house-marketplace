@@ -3,34 +3,29 @@ import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase.config";
 import { toast } from "react-toastify";
+import useDbOperations from "../hooks/useDbOperations";
 import Spinner from "../components/Spinner";
 
 function Contact() {
     const [message, setMessage] = useState("");
     const [landlord, setLandLord] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [searchParams] = useSearchParams();
-
+    const { loading, fetchDocFromDb } = useDbOperations();
     const params = useParams();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const getLandLord = async () => {
-            const docRef = doc(db, "users", params.landlordId);
-            try {
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setLandLord(docSnap.data());
-                    setLoading(false);
+        fetchDocFromDb("users", params.landlordId)
+            .then((docSnap) => {
+                if (docSnap) {
+                    setLandLord(docSnap);
                 }
-            } catch {
-                toast.error("Couldn't get landlord data");
+            })
+            .catch((error) => {
                 navigate(-1);
-            }
-        };
-
-        getLandLord();
-    }, [navigate, params.landlordId]);
+                toast.error(error);
+            });
+    }, [fetchDocFromDb, navigate, params.landlordId]);
 
     const onChange = (e) => {
         setMessage(e.target.value);
@@ -45,7 +40,7 @@ function Contact() {
             <header>
                 <p className="pageHeader">Contact Landlord</p>
             </header>
-            {landlord !== null && (
+            {landlord && (
                 <main>
                     <div className="contactLandlord">
                         <p className="landlordName">Contact {landlord.name}</p>

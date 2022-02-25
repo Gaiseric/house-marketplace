@@ -19,20 +19,14 @@ import ListingItem from "../components/ListingItem";
 
 function Profile() {
     const auth = getAuth();
-
     const [formData, setFormData] = useState({
         name: auth.currentUser.displayName,
         email: auth.currentUser.email,
     });
-
     const [loading, setLoading] = useState(true);
-
     const [listings, setListings] = useState(null);
-
     const [changeDetails, setChangeDetails] = useState(false);
-
     const { name, email } = formData;
-
     const navigate = useNavigate();
 
     useEffect(() => {

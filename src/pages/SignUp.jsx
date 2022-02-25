@@ -14,15 +14,12 @@ import OAuth from "../components/OAuth";
 
 function SignUp() {
     const [showPassword, setShowPassword] = useState(false);
-
     const [formData, setFormData] = useState({
         name: "",
         email: "",
         password: "",
     });
-
     const { name, email, password } = formData;
-
     const navigate = useNavigate();
 
     const onChange = (e) => {

@@ -7,9 +7,7 @@ import useDbOperations from "../hooks/useDbOperations";
 
 function CreateListing() {
     const { loggedUser, checkingStatus } = useAuthStatus();
-
     const { loading, saveListingToDb } = useDbOperations();
-
     const [formData, setFormData] = useState({
         type: "rent",
         name: "",
@@ -27,7 +25,6 @@ function CreateListing() {
             lng: 0,
         },
     });
-
     const navigate = useNavigate();
 
     useEffect(() => {
