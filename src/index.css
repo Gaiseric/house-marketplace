@@ -745,7 +745,7 @@ button {
 
 @media (min-width: 1025px) {
     .listingForm {
-        background-color: #edf0f3;
+        background-color: rgba(44, 44, 44, 0.1);
         border-radius: 1rem;
         padding: 2rem;
         width: 60vw;

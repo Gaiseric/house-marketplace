@@ -3,17 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
-import useListingDbOperations from "../hooks/useListingDbOperations";
+import useDbOperations from "../hooks/useDbOperations";
 
 function EditListing() {
-    const [loading, setLoading] = useState(false);
-
     const [listing, setListing] = useState(null);
 
     const { loggedUser, checkingStatus } = useAuthStatus();
 
-    const { saveImagesToStorage, updateListingInDb, fetchListingFromDb } =
-        useListingDbOperations();
+    const { loading, updateListingInDb, fetchListingFromDb } =
+        useDbOperations();
 
     const [formData, setFormData] = useState({
         type: "rent",
@@ -50,20 +48,19 @@ function EditListing() {
     }, [checkingStatus, loggedUser, navigate]);
 
     useEffect(() => {
-        setLoading(true);
         fetchListingFromDb(params.listingId)
             .then((docSnap) => {
                 if (docSnap) {
                     setListing(docSnap);
                     setFormData({
                         ...docSnap,
+                        images: {},
                     });
-                    setLoading(false);
                 }
             })
-            .catch(() => {
+            .catch((error) => {
                 navigate(-1);
-                toast.error("Can not receive listing");
+                toast.error(error);
             });
     }, [fetchListingFromDb, navigate, params.listingId]);
 
@@ -74,45 +71,26 @@ function EditListing() {
         }
     }, [listing, loggedUser, navigate]);
 
-    const onSubmit = async (e) => {
+    const onSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
 
         if (formData.discountedPrice >= formData.regularPrice) {
-            setLoading(false);
             toast.error("Discounted price needs to be less than regular price");
             return;
         }
         if (formData.images.length > 6) {
-            setLoading(false);
             toast.error("Max 6 images allowed");
             return;
         }
 
-        let imgUrls;
-        try {
-            imgUrls = await saveImagesToStorage(
-                loggedUser.uid,
-                formData.images
-            );
-        } catch {
-            setLoading(false);
-            toast.error("Problems with images uploading");
-        }
-
-        try {
-            const docRef = await updateListingInDb(
-                formData,
-                imgUrls,
-                params.listingId
-            );
-            setLoading(false);
-            toast.success("Listing updated in database");
-            navigate(`/category/${formData.type}/${docRef.id}`);
-        } catch {
-            setLoading(false);
-            toast.error("Problems with listing updating");
-        }
+        updateListingInDb(formData, params.listingId)
+            .then((docRef) => {
+                toast.success("Listing updated in database");
+                navigate(`/category/${formData.type}/${docRef.id}`);
+            })
+            .catch((error) => {
+                toast.error(error);
+            });
     };
 
     const onMutate = (e) => {

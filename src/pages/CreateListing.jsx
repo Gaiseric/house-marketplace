@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
-import useListingDbOperations from "../hooks/useListingDbOperations";
+import useDbOperations from "../hooks/useDbOperations";
 
 function CreateListing() {
-    const [loading, setLoading] = useState(false);
-
     const { loggedUser, checkingStatus } = useAuthStatus();
 
-    const { saveImagesToStorage, saveListingToDb } = useListingDbOperations();
+    const { loading, saveListingToDb } = useDbOperations();
 
     const [formData, setFormData] = useState({
         type: "rent",
@@ -44,41 +42,26 @@ function CreateListing() {
         }
     }, [checkingStatus, loggedUser, navigate]);
 
-    const onSubmit = async (e) => {
+    const onSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
 
         if (formData.discountedPrice >= formData.regularPrice) {
-            setLoading(false);
             toast.error("Discounted price needs to be less than regular price");
             return;
         }
         if (formData.images.length > 6) {
-            setLoading(false);
             toast.error("Max 6 images allowed");
             return;
         }
 
-        let imgUrls;
-        try {
-            imgUrls = await saveImagesToStorage(
-                loggedUser.uid,
-                formData.images
-            );
-        } catch {
-            setLoading(false);
-            toast.error("Problems with images uploading");
-        }
-
-        try {
-            const docRef = await saveListingToDb(formData, imgUrls);
-            setLoading(false);
-            toast.success("Listing saved to database");
-            navigate(`/category/${formData.type}/${docRef.id}`);
-        } catch {
-            setLoading(false);
-            toast.error("Problems with storing to database");
-        }
+        saveListingToDb(formData)
+            .then((docRef) => {
+                toast.success("Listing saved to database");
+                navigate(`/category/${formData.type}/${docRef.id}`);
+            })
+            .catch((error) => {
+                toast.error(error);
+            });
     };
 
     const onMutate = (e) => {
