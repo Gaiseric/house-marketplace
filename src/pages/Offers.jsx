@@ -1,104 +1,69 @@
-import { useEffect, useState } from "react";
-import {
-    collection,
-    getDocs,
-    query,
-    where,
-    orderBy,
-    limit,
-    startAfter,
-} from "firebase/firestore";
-import { db } from "../firebase.config";
+import { useLayoutEffect, useState } from "react";
+import { where, orderBy, limit, startAfter } from "firebase/firestore";
 import { toast } from "react-toastify";
 import Spinner from "../components/Spinner";
 import ListingItem from "../components/ListingItem";
+import useListingsDbOperations, {
+    createListingsFromQuerySnap,
+} from "../hooks/useListingsDbOperations";
 
 function Offers() {
     const [listings, setListings] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { loading, fetchListingsFromDb } = useListingsDbOperations();
     const [lastFetchedListing, setLastFetchedListing] = useState(null);
 
-    useEffect(() => {
-        const fetchListings = async () => {
-            try {
-                const listingRef = collection(db, "listings");
-                const q = query(
-                    listingRef,
-                    where("offer", "==", true),
-                    orderBy("timestamp", "desc"),
-                    limit(10)
-                );
-                const querySnap = await getDocs(q);
-
-                if (querySnap.size > 0) {
+    useLayoutEffect(() => {
+        fetchListingsFromDb([
+            where("offer", "==", true),
+            orderBy("timestamp", "desc"),
+            limit(1),
+        ])
+            .then((querySnap) => {
+                if (querySnap) {
                     const lastVisible =
                         querySnap.docs[querySnap.docs.length - 1];
                     setLastFetchedListing(lastVisible);
 
-                    let listings = [];
-                    querySnap.forEach((doc) => {
-                        return listings.push({
-                            id: doc.id,
-                            data: doc.data(),
-                        });
-                    });
-
+                    let listings = createListingsFromQuerySnap(querySnap);
                     setListings(listings);
                 }
-
-                setLoading(false);
-            } catch {
-                toast.error("Couldn't receive listings");
-            }
-        };
-        fetchListings();
-    }, []);
+            })
+            .catch((error) => {
+                toast.error(error);
+            });
+    }, [fetchListingsFromDb]);
 
     const onFetchMoreListings = async () => {
-        try {
-            const listingRef = collection(db, "listings");
-            const q = query(
-                listingRef,
-                where("offer", "==", true),
-                orderBy("timestamp", "desc"),
-                startAfter(lastFetchedListing),
-                limit(10)
-            );
-            const querySnap = await getDocs(q);
+        fetchListingsFromDb([
+            where("offer", "==", true),
+            orderBy("timestamp", "desc"),
+            startAfter(lastFetchedListing),
+            limit(1),
+        ])
+            .then((querySnap) => {
+                if (querySnap) {
+                    const lastVisible =
+                        querySnap.docs[querySnap.docs.length - 1];
+                    setLastFetchedListing(lastVisible);
 
-            if (querySnap.size > 0) {
-                const lastVisible = querySnap.docs[querySnap.docs.length - 1];
-                setLastFetchedListing(lastVisible);
-
-                let listings = [];
-                querySnap.forEach((doc) => {
-                    return listings.push({
-                        id: doc.id,
-                        data: doc.data(),
-                    });
-                });
-
-                setListings((prevState) => [...prevState, ...listings]);
-            } else {
-                setLastFetchedListing(null);
-            }
-
-            setLoading(false);
-        } catch (error) {
-            toast.error("Couldn't receive listings");
-        }
+                    let listings = createListingsFromQuerySnap(querySnap);
+                    setListings((prevState) => [...prevState, ...listings]);
+                } else {
+                    setLastFetchedListing(null);
+                }
+            })
+            .catch((error) => {
+                toast.error(error);
+            });
     };
-
-    if (loading) {
-        return <Spinner />;
-    }
 
     return (
         <div className="category">
             <header>
                 <p className="pageHeader">Offers</p>
             </header>
-            {listings && listings.length > 0 ? (
+            {loading && <Spinner />}
+            {listings ? (
                 <main>
                     <ul className="categoryListings">
                         {listings.map((listing) => (
@@ -112,7 +77,7 @@ function Offers() {
                     )}
                 </main>
             ) : (
-                <p>No listings for offers</p>
+                !loading && <p>No listings for offers</p>
             )}
         </div>
     );

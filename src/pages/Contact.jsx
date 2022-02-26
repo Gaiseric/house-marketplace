@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase.config";
 import { toast } from "react-toastify";
-import useDbOperations from "../hooks/useDbOperations";
+import useListingsDbOperations from "../hooks/useListingsDbOperations";
 import Spinner from "../components/Spinner";
 
 function Contact() {
     const [message, setMessage] = useState("");
     const [landlord, setLandLord] = useState(null);
-    const { loading, fetchDocFromDb } = useDbOperations();
+    const { loading, fetchListingFromDb } = useListingsDbOperations();
     const params = useParams();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchDocFromDb("users", params.landlordId)
+        fetchListingFromDb("users", params.landlordId)
             .then((docSnap) => {
                 if (docSnap) {
                     setLandLord(docSnap);
@@ -25,7 +23,7 @@ function Contact() {
                 navigate(-1);
                 toast.error(error);
             });
-    }, [fetchDocFromDb, navigate, params.landlordId]);
+    }, [fetchListingFromDb, navigate, params.landlordId]);
 
     const onChange = (e) => {
         setMessage(e.target.value);

@@ -6,6 +6,8 @@ import {
     collection,
     serverTimestamp,
     getDoc,
+    getDocs,
+    query,
 } from "firebase/firestore";
 import { db } from "../firebase.config";
 import { v4 as uuidv4 } from "uuid";
@@ -16,7 +18,7 @@ import {
     getDownloadURL,
 } from "firebase/storage";
 
-export default function useDbOperations() {
+export default function useListingsDbOperations() {
     const [loading, setLoading] = useState(false);
 
     const saveListingToDb = async (formData) => {
@@ -89,7 +91,7 @@ export default function useDbOperations() {
         }
     }, []);
 
-    const fetchDocFromDb = useCallback(async (collection, docId) => {
+    const fetchListingFromDb = useCallback(async (collection, docId) => {
         setLoading(true);
         try {
             const docRef = doc(db, collection, docId);
@@ -106,13 +108,43 @@ export default function useDbOperations() {
         }
     }, []);
 
+    const fetchListingsFromDb = useCallback(async (queryParam) => {
+        setLoading(true);
+        try {
+            const listingsRef = collection(db, "listings");
+            const q = query(listingsRef, ...queryParam);
+            const querySnap = await getDocs(q);
+            setLoading(false);
+            if (!querySnap.empty) {
+                return querySnap;
+            } else {
+                return null;
+            }
+        } catch {
+            setLoading(false);
+            return Promise.reject("Unable to fetch data");
+        }
+    }, []);
+
     return {
         loading,
         saveListingToDb,
         updateListingInDb,
-        fetchDocFromDb,
+        fetchListingFromDb,
+        fetchListingsFromDb,
     };
 }
+
+export const createListingsFromQuerySnap = (querySnap) => {
+    let listings = [];
+    querySnap.forEach((doc) => {
+        return listings.push({
+            id: doc.id,
+            data: doc.data(),
+        });
+    });
+    return listings;
+};
 
 const saveImagesToStorage = (userUid, images) => {
     const storeImage = (image) => {

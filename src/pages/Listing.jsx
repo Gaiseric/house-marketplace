@@ -7,7 +7,7 @@ import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { Navigation, Pagination } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import useAuthStatus from "../hooks/useAuthStatus";
-import useDbOperations from "../hooks/useDbOperations";
+import useListingsDbOperations from "../hooks/useListingsDbOperations";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
@@ -16,12 +16,12 @@ function Listing() {
     const [listing, setListing] = useState(null);
     const [shareLinkCopied, setShareLinkCopied] = useState(false);
     const { loggedUser } = useAuthStatus();
-    const { loading, fetchDocFromDb } = useDbOperations();
+    const { loading, fetchListingFromDb } = useListingsDbOperations();
     const navigate = useNavigate();
     const params = useParams();
 
     useEffect(() => {
-        fetchDocFromDb("listings", params.listingId)
+        fetchListingFromDb("listings", params.listingId)
             .then((docSnap) => {
                 if (docSnap) {
                     setListing(docSnap);
@@ -31,7 +31,7 @@ function Listing() {
                 navigate(-1);
                 toast.error(error);
             });
-    }, [fetchDocFromDb, navigate, params.listingId]);
+    }, [fetchListingFromDb, navigate, params.listingId]);
 
     const onClick = () => {
         navigator.clipboard.writeText(window.location.href);

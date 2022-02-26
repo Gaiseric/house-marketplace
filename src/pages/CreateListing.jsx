@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
-import useDbOperations from "../hooks/useDbOperations";
+import useListingsDbOperations from "../hooks/useListingsDbOperations";
 
 function CreateListing() {
     const { loggedUser, checkingStatus } = useAuthStatus();
-    const { loading, saveListingToDb } = useDbOperations();
+    const { loading, saveListingToDb } = useListingsDbOperations();
     const [formData, setFormData] = useState({
         type: "rent",
         name: "",

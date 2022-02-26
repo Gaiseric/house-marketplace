@@ -1,45 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
+import { orderBy, limit } from "firebase/firestore";
 import { Navigation, Pagination } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Spinner from "./Spinner";
-import { db } from "../firebase.config";
+import useListingsDbOperations, {
+    createListingsFromQuerySnap,
+} from "../hooks/useListingsDbOperations";
 
 function Slider() {
-    const [loading, setLoading] = useState(true);
-
     const [listings, setListings] = useState(null);
-
+    const { loading, fetchListingsFromDb } = useListingsDbOperations();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchListings = async () => {
-            const listingsRef = collection(db, "listings");
-            const q = query(
-                listingsRef,
-                orderBy("timestamp", "desc"),
-                limit(5)
-            );
-            const querySnap = await getDocs(q);
-
-            let listings = [];
-            querySnap.forEach((doc) => {
-                return listings.push({
-                    id: doc.id,
-                    data: doc.data(),
-                });
-            });
-
-            setListings(listings);
-            setLoading(false);
-        };
-
-        fetchListings();
-    }, []);
+        fetchListingsFromDb([orderBy("timestamp", "desc"), limit(5)]).then(
+            (querySnap) => {
+                if (querySnap) {
+                    let listings = createListingsFromQuerySnap(querySnap);
+                    setListings(listings);
+                }
+            }
+        );
+    }, [fetchListingsFromDb]);
 
     if (loading) {
         return <Spinner />;
