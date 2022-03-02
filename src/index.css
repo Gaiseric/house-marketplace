@@ -534,6 +534,21 @@ button {
     align-items: center;
 }
 
+.deleteIconDiv {
+    cursor: pointer;
+    position: absolute;
+    top: 3%;
+    right: 2%;
+    z-index: 2;
+    background-color: rgb(231, 76, 60);
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .listingName {
     font-weight: 600;
     font-size: 1.5rem;
@@ -741,6 +756,10 @@ button {
 
 .lisitingsList {
     padding: 0;
+}
+
+.listingForm {
+    position: relative;
 }
 
 @media (min-width: 1025px) {

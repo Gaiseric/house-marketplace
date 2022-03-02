@@ -4,6 +4,9 @@ import useAuthStatus from "../hooks/useAuthStatus";
 import Spinner from "../components/Spinner";
 import { toast } from "react-toastify";
 import useListingsDbOperations from "../hooks/useListingsDbOperations";
+import { Navigation, Pagination } from "swiper";
+import { Swiper, SwiperSlide } from "swiper/react";
+import deleteIcon from "../assets/svg/deleteIcon.svg";
 
 function EditListing() {
     const [listing, setListing] = useState(null);
@@ -50,6 +53,7 @@ function EditListing() {
                     setFormData({
                         ...docSnap,
                         images: {},
+                        deletedImgUrls: [],
                     });
                 }
             })
@@ -73,8 +77,8 @@ function EditListing() {
             toast.error("Discounted price needs to be less than regular price");
             return;
         }
-        if (formData.images.length > 6) {
-            toast.error("Max 6 images allowed");
+        if (formData.images.length + formData.imgUrls.length > 6) {
+            toast.error("Max 6 images allowed. Delete some images to add new");
             return;
         }
 
@@ -120,6 +124,20 @@ function EditListing() {
         }
     };
 
+    const onDelete = (url) => {
+        if (window.confirm("Are you sure you want to delete this image?")) {
+            const updatedImgUrls = formData.imgUrls.filter(
+                (image) => image !== url
+            );
+            const deletedImgUrl = url;
+            setFormData({
+                ...formData,
+                imgUrls: updatedImgUrls,
+                deletedImgUrls: [...formData.deletedImgUrls, deletedImgUrl],
+            });
+        }
+    };
+
     if (checkingStatus) {
         return <Spinner />;
     }
@@ -134,6 +152,35 @@ function EditListing() {
             </header>
             <main>
                 <form className="listingForm" onSubmit={onSubmit}>
+                    {formData.imgUrls?.length > 0 && (
+                        <Swiper
+                            modules={[Navigation, Pagination]}
+                            slidesPerView={1}
+                            pagination={{ clickable: true }}
+                        >
+                            {formData.imgUrls.map((url, index) => (
+                                <SwiperSlide key={index}>
+                                    <div
+                                        className="swiperSlideDiv"
+                                        style={{
+                                            background: `url(${url}) center/cover no-repeat`,
+                                        }}
+                                    >
+                                        <div
+                                            className="deleteIconDiv"
+                                            title="Remove image"
+                                            onClick={() => onDelete(url)}
+                                        >
+                                            <img
+                                                src={deleteIcon}
+                                                alt="delete"
+                                            />
+                                        </div>
+                                    </div>
+                                </SwiperSlide>
+                            ))}
+                        </Swiper>
+                    )}
                     <label className="formLabel">Sale / Rent</label>
                     <div className="formButtons">
                         <button
@@ -368,7 +415,6 @@ function EditListing() {
                         max="6"
                         accept=".jpg,.png,.jpeg"
                         multiple
-                        required
                     />
                     <button
                         type="submit"

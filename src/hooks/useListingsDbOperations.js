@@ -16,6 +16,7 @@ import {
     ref,
     uploadBytesResumable,
     getDownloadURL,
+    deleteObject,
 } from "firebase/storage";
 
 export default function useListingsDbOperations() {
@@ -59,24 +60,34 @@ export default function useListingsDbOperations() {
 
     const updateListingInDb = useCallback(async (formData, listingId) => {
         setLoading(true);
-        let imgUrls;
-
-        try {
-            imgUrls = await saveImagesToStorage(
-                formData.userRef,
-                formData.images
-            );
-        } catch {
-            setLoading(false);
-            return Promise.reject("Unable to update images");
-        }
-
         const formDataToDb = {
             ...formData,
-            imgUrls,
             timestamp: serverTimestamp(),
         };
 
+        if (formData.deletedImgUrls.length > 0) {
+            try {
+                await deleteImagesFromStorage(formData.deletedImgUrls);
+            } catch {
+                setLoading(false);
+                return Promise.reject("Unable to delete images");
+            }
+        }
+
+        if (formData.images.length > 0) {
+            try {
+                let imgUrls = await saveImagesToStorage(
+                    formData.userRef,
+                    formData.images
+                );
+                formDataToDb.imgUrls = [...formData.imgUrls, ...imgUrls];
+            } catch {
+                setLoading(false);
+                return Promise.reject("Unable to update images");
+            }
+        }
+
+        delete formDataToDb.deletedImgUrls;
         delete formDataToDb.images;
         !formDataToDb.offer && delete formDataToDb.discountedPrice;
 
@@ -146,12 +157,22 @@ export const createListingsFromQuerySnap = (querySnap) => {
     return listings;
 };
 
+const deleteImagesFromStorage = (urls) => {
+    const deleteImage = (imageUrl) => {
+        const storage = getStorage();
+        const httpsReference = ref(storage, imageUrl);
+        return deleteObject(httpsReference);
+    };
+
+    return Promise.all([...urls].map((imageUrl) => deleteImage(imageUrl)));
+};
+
 const saveImagesToStorage = (userUid, images) => {
     const storeImage = (image) => {
         return new Promise((resolve, reject) => {
             const storage = getStorage();
-            const fileName = `${userUid}-${image.name}-${uuidv4()}`;
-            const storageRef = ref(storage, "images/" + fileName);
+            const fileName = `${image.name}-${uuidv4()}`;
+            const storageRef = ref(storage, `images/${userUid}/` + fileName);
             const uploadTask = uploadBytesResumable(storageRef, image);
             uploadTask.on(
                 "state_changed",
